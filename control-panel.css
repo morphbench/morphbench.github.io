@@ -1,0 +1,247 @@
+/* ============================================================
+   Control Panel  --  lil-gui compact style for overlay
+   ============================================================ */
+
+.lynx-control-panel {
+  background: transparent;
+  color: #e0e0e0;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---- Toolbar: Reset / Pause / Random ---- */
+.cp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 2px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.cp-toolbar-title {
+  font-weight: 600;
+  font-size: 11px;
+  margin-right: auto;
+  color: #aaaaaa;
+}
+
+.cp-btn {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #fff;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+.cp-btn:hover { opacity: 0.8; }
+.cp-btn:active { transform: scale(0.96); }
+.cp-btn-reset { background: #e05050; }
+.cp-btn-pause { background: #d09020; }
+.cp-btn-random { background: #2e8b57; color: #000; }
+
+/* ---- Joint list ---- */
+.cp-joint-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 2px 0;
+}
+.cp-joint-list::-webkit-scrollbar { width: 3px; }
+.cp-joint-list::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 2px; }
+
+/* ---- Per-joint row: single compact line ---- */
+.cp-joint-row {
+  display: flex;
+  flex-direction: column;
+  padding: 3px 4px;
+  gap: 1px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.cp-joint-row:hover { background: rgba(255,255,255,0.03); }
+
+.cp-joint-main {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cp-joint-label {
+  flex: 0 0 auto;
+  width: 38px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #aaaaaa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cp-target-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cp-target-label { display: none; }
+
+.cp-slider {
+  flex: 1 1 auto;
+  min-width: 50px;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #2a2a2a;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.cp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #2e8b57;
+  border: none;
+  cursor: grab;
+}
+.cp-slider::-moz-range-thumb {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #2e8b57;
+  border: none;
+  cursor: grab;
+}
+.cp-slider::-moz-range-track {
+  background: #2a2a2a; height: 4px; border-radius: 2px;
+}
+
+.cp-value {
+  flex: 0 0 40px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: #aaaaaa;
+}
+
+/* Actual value: show inline after target */
+.cp-actual-group {
+  display: none;  /* hide in compact mode — actual shown via progress bar color */
+}
+
+/* ---- Progress bar ---- */
+.cp-progress-wrap {
+  height: 2px;
+  background: #2a2a2a;
+  border-radius: 1px;
+  overflow: hidden;
+}
+.cp-progress-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 0.08s linear, background 0.3s;
+}
+
+/* ---- Error dot: hidden in compact mode ---- */
+.cp-error-dot { display: none; }
+.cp-error-dot.cp-err-green { background: #4cdf6b; }
+.cp-error-dot.cp-err-yellow { background: #f0c040; }
+.cp-error-dot.cp-err-red { background: #ff5050; }
+
+/* ---- Advanced section ---- */
+.cp-advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  font-size: 10px;
+  color: #666666;
+  user-select: none;
+  flex-shrink: 0;
+}
+.cp-advanced-toggle:hover { color: #aaaaaa; }
+
+.cp-advanced-arrow { font-size: 9px; transition: transform 0.2s; }
+.cp-advanced-arrow.cp-expanded { transform: rotate(90deg); }
+
+.cp-advanced-body {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  flex-shrink: 0;
+}
+.cp-advanced-body.cp-visible { display: flex; }
+
+.cp-adv-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cp-adv-label {
+  flex: 0 0 auto;
+  max-width: 70px;
+  font-size: 9px;
+  color: #aaaaaa;
+}
+.cp-adv-slider {
+  flex: 1 1 auto;
+  min-width: 40px;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #2a2a2a;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+.cp-adv-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #2e8b57;
+  border: none;
+}
+.cp-adv-slider::-moz-range-thumb {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #2e8b57;
+  border: none;
+}
+.cp-adv-value {
+  flex: 0 0 34px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: #aaaaaa;
+}
+.cp-adv-apply {
+  align-self: flex-end;
+  padding: 3px 12px;
+  background: #2e8b57;
+  color: #000;
+  border: none;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cp-adv-apply:hover { background: #257a4a; }
+
+/* ---- Empty ---- */
+.cp-empty {
+  color: #666666;
+  font-size: 11px;
+  padding: 12px 6px;
+  text-align: center;
+}

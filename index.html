@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MorphBench — Manipulation With Any Morphology (ICRA)</title>
+  <meta name="description" content="MorphBench is a manipulation benchmark spanning 190 modular robot-arm morphologies, with an in-browser tool to build an arm from tube modules and render it live in 3D.">
+
+  <!-- Favicon: emerald 'M' on black -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='6'%20fill='%23000'/%3E%3Ctext%20x='16'%20y='23'%20font-family='Noto%20Sans,sans-serif'%20font-size='21'%20font-weight='800'%20fill='%232e8b57'%20text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+
+  <!-- Open Graph / Twitter (link previews) -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="MorphBench — Manipulation With Any Morphology">
+  <meta property="og:description" content="A manipulation benchmark across 190 modular robot-arm morphologies. Build an arm in your browser and render it live in 3D.">
+  <meta property="og:image" content="assets/hero/hero_poster.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="graph-editor.css">
+  <link rel="stylesheet" href="control-panel.css">
+
+  <!-- Vendored libraries (local copies — no CDN/Wi-Fi dependency for live demos) -->
+  <script src="vendor/cytoscape.min.js"></script>
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/OrbitControls.js"></script>
+
+  <!-- Component scripts: viewer.js and graph-editor.js attach to global scope -->
+  <script src="viewer.js"></script>
+  <script src="graph-editor.js"></script>
+</head>
+<body>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading MorphBench...</div>
+  </div>
+
+  <div class="page-wrap">
+
+    <!-- 1. Academic Header Section -->
+    <header class="academic-header">
+      <h1 class="project-name">MorphBench</h1>
+      <p class="project-subtitle">Manipulation With Any Morphology</p>
+      <div class="authors">
+        <span>Xinrui Zu<sup>*</sup></span>
+      </div>
+      <div class="affiliations">Vrije Universiteit Amsterdam</div>
+      <div class="links">
+        <span class="link-btn link-btn-soon" aria-disabled="true" title="Coming soon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Paper <span class="soon-tag">soon</span>
+        </span>
+        <span class="link-btn link-btn-soon" aria-disabled="true" title="Coming soon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          Code <span class="soon-tag">soon</span>
+        </span>
+        <span class="link-btn link-btn-soon" aria-disabled="true" title="Coming soon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          Dataset <span class="soon-tag">soon</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- 2.5 Hero Banner Video -->
+    <section class="hero-banner">
+      <video autoplay muted loop playsinline poster="assets/hero/hero_poster.jpg">
+        <source src="assets/hero/hero_banner.mp4" type="video/mp4">
+      </video>
+    </section>
+
+    <!-- 3. Interactive Demo Section -->
+    <section class="demo-section">
+      <h2>&darr; Interactive Demo &darr;</h2>
+      <div class="demo-card">
+
+        <!-- 3D Viewer with overlay joint sliders -->
+        <div class="viewer-wrapper">
+          <div id="viewer-container" class="demo-viewer"></div>
+          <div class="viewer-overlay">
+            <div id="panel-container" class="control-panel-wrap"></div>
+          </div>
+        </div>
+
+        <!-- Bottom bar: graph editor (generate button is inside the legend area) -->
+        <div id="graph-container" class="demo-graph"></div>
+      </div>
+    </section>
+
+    <!-- 4. Abstract (after demo) -->
+    <section class="abstract">
+      <p><strong>TL;DR:</strong> MorphBench is a manipulation benchmark spanning 190 modular
+      arm morphologies, with a browser tool that lets you build an arm from tube modules and
+      render it live in 3D &mdash; no install.</p>
+      <p>Most manipulation policies are tied to one fixed robot body. MorphBench makes the body
+      a controlled variable: you compose an arm from parametric tube modules &mdash; straight,
+      30&deg;, 45&deg;, and offset bends &mdash; across 4-, 5-, and 6-joint designs, for 190
+      morphologies in total. On this page you can wire up a morphology in the node-graph editor,
+      hit <strong>Generate</strong> to build its MJCF model, and drive each joint with live
+      sliders in a three.js viewer, all in the browser. The benchmark pairs these bodies with
+      four tasks &mdash; reach, push-cube, a dynamic ball-in-cup, and a deformable-object flip
+      &mdash; to study policy representations that generalize across body structure rather than
+      assuming a single robot, with the same modules 3D-printed and tracked via OptiTrack for a
+      sim2real path.</p>
+    </section>
+
+    <!-- 5. Optional academic content -->
+    <section class="content-section">
+      <h2>Citation</h2>
+      <p>Paper and BibTeX coming soon.</p>
+    </section>
+
+  </div>
+
+  <!-- Status bar -->
+  <footer class="status-bar">
+    <span id="status-joints">Joints: --</span>
+    <span id="status-fps">FPS: --</span>
+    <span id="status-model">Model: not loaded</span>
+    <button id="log-toggle" class="log-toggle-btn">Log</button>
+  </footer>
+
+  <!-- Collapsible debug log -->
+  <div id="log-panel" class="log-panel hidden">
+    <div id="log-content" class="log-content"></div>
+  </div>
+
+  <!-- Failsafe: if ES module fails to load (file://, CORS, cache), remove spinner -->
+  <script>
+    window.__morphbenchReady = false;
+    setTimeout(function () {
+      if (window.__morphbenchReady) return;
+      var ov = document.getElementById('loading-overlay');
+      if (!ov) return;
+      // Replace spinner with error message
+      ov.innerHTML =
+        '<div style="text-align:center;max-width:480px;padding:0 24px">' +
+          '<div style="font-size:28px;margin-bottom:12px">&#9888;&#65039;</div>' +
+          '<div style="font-size:15px;font-weight:600;color:#ccc;margin-bottom:8px">Loading failed</div>' +
+          '<div style="font-size:13px;color:#888;line-height:1.5">' +
+            'The app could not initialise. Common causes:<br>' +
+            '&bull; Opened via <code>file://</code> &mdash; use an HTTP server instead<br>' +
+            '&bull; CDN libraries blocked or slow &mdash; check your network<br>' +
+            '&bull; Browser cache stale &mdash; hard-refresh (Ctrl+Shift+R)' +
+          '</div>' +
+          '<button onclick="location.reload()" style="margin-top:16px;padding:8px 20px;border:1px solid #444;border-radius:6px;background:#1a1a1a;color:#fff;cursor:pointer;font-size:13px">Retry</button>' +
+        '</div>';
+    }, 6000);
+  </script>
+
+  <!-- Main integration script (ES module) -->
+  <script type="module" src="main.js"></script>
+</body>
+</html>

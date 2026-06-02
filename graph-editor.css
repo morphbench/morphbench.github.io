@@ -1,0 +1,784 @@
+/* ============================================================
+   Lynx Morphology Graph Editor  --  Dark Theme
+   ============================================================ */
+
+/* ---- Container ---- */
+.lynx-graph-editor {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  font-family: 'Noto Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  border-radius: 0;
+  border: none;
+}
+
+/* ---- Parts Palette (left sidebar) ---- */
+.lynx-palette {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  width: 90px;
+  flex-shrink: 0;
+  background: rgba(10, 10, 10, 0.95);
+  border-right: 1px solid #2a2a2a;
+  z-index: 20;
+  padding: 6px;
+}
+
+/* ---- Joint Chip (draggable) ---- */
+.lynx-joint-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1a2a1a, #0a1a0a);
+  border: 1px dashed #2e8b57;
+  border-radius: 8px;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  text-align: center;
+  transition: background 0.15s, box-shadow 0.15s;
+  padding: 8px 4px;
+}
+
+.lynx-chip-icons {
+  display: flex;
+  gap: 6px;
+}
+
+.lynx-chip-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #2e8b57;
+  line-height: 1.3;
+}
+
+.lynx-chip-arrow {
+  font-size: 18px;
+  color: #2e8b57;
+  opacity: 0.7;
+}
+
+.lynx-joint-chip:hover {
+  background: linear-gradient(135deg, #2a3a2a, #1a2a1a);
+  border-color: #2e8b57;
+  box-shadow: 0 0 8px rgba(46, 139, 87, 0.3);
+}
+.lynx-joint-chip:hover .lynx-chip-arrow {
+  opacity: 1;
+}
+
+.lynx-joint-chip:active {
+  cursor: grabbing;
+}
+
+.lynx-joint-chip.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.lynx-joint-chip-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2e8b57;
+  border: 2px solid #1e6b3e;
+  flex-shrink: 0;
+}
+
+/* ---- Drag Ghost ---- */
+.lynx-drag-ghost {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px 5px 10px;
+  background: rgba(46, 139, 87, 0.2);
+  border: 1px solid #2e8b57;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #80c8a0;
+  pointer-events: none;
+  z-index: 100;
+  opacity: 0.8;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 16px rgba(46, 139, 87, 0.3);
+  transition: opacity 0.1s;
+}
+
+.lynx-drag-ghost.hidden {
+  display: none;
+}
+
+.lynx-drag-ghost .lynx-joint-chip-icon {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2e8b57;
+  border: 2px solid #1e6b3e;
+  flex-shrink: 0;
+}
+
+/* ---- Insert Indicator ---- */
+.lynx-insert-indicator {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(46, 139, 87, 0.9);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 99;
+  box-shadow: 0 0 12px rgba(46, 139, 87, 0.6);
+  animation: lynx-pulse 1s ease-in-out infinite;
+}
+
+.lynx-insert-indicator.hidden {
+  display: none;
+}
+
+@keyframes lynx-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+}
+
+/* ---- Cytoscape canvas ---- */
+.lynx-graph-canvas {
+  flex: 1 1 0%;
+  min-width: 0;
+  min-height: 100px;
+  /* cytoscape.js needs a non-zero computed height to initialize */
+}
+
+/* ---- Context Menu ---- */
+.lynx-ctx-menu {
+  position: absolute;
+  z-index: 50;
+  background: rgba(10, 10, 10, 0.96);
+  border: 1px solid #3a3a3a;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  min-width: 140px;
+}
+
+.lynx-ctx-menu.hidden {
+  display: none;
+}
+
+.lynx-ctx-item {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  color: #ff5555;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.lynx-ctx-item:hover {
+  background: rgba(255, 85, 85, 0.12);
+}
+
+.lynx-ctx-item.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ---- Select / Dropdown ---- */
+.lynx-select {
+  height: 28px;
+  padding: 0 8px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.lynx-select:focus {
+  border-color: #2e8b57;
+}
+
+.lynx-select option {
+  background: #0a0a0a;
+  color: #e0e0e0;
+}
+
+/* ---- Property Panel (floating overlay, does not affect canvas layout) ---- */
+.lynx-prop-panel {
+  position: absolute;
+  left: 90px; /* right of palette */
+  top: 0;
+  bottom: 0;
+  width: 214px;
+  background: rgba(10, 10, 10, 0.95);
+  border-right: 1px solid #2a2a2a;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+  backdrop-filter: blur(8px);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.3);
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.lynx-prop-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-10px);
+}
+
+.lynx-prop-header {
+  padding: 12px 14px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #2e8b57;
+  border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.lynx-prop-header .lynx-close-btn {
+  background: none;
+  border: none;
+  color: #444444;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.lynx-prop-header .lynx-close-btn:hover {
+  color: #e0e0e0;
+}
+
+.lynx-prop-body {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+/* ---- Form group ---- */
+.lynx-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lynx-form-group label {
+  font-size: 11px;
+  color: #888888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+
+.lynx-form-group .lynx-hint {
+  font-size: 10px;
+  color: #666666;
+  margin-top: -2px;
+}
+
+/* ---- Buttons ---- */
+.lynx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  border: 1px solid #3a3a3a;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
+  user-select: none;
+}
+
+.lynx-btn:hover {
+  background: #2a2a2a;
+  border-color: #444444;
+}
+
+.lynx-btn:active {
+  background: #3a3a3a;
+}
+
+.lynx-btn:disabled,
+.lynx-btn.disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ---- Delete button ---- */
+.lynx-btn-delete {
+  width: 100%;
+  height: 32px;
+  background: rgba(255, 60, 60, 0.12);
+  color: #ff5555;
+  border: 1px solid rgba(255, 60, 60, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lynx-btn-delete:hover {
+  background: rgba(255, 60, 60, 0.25);
+  border-color: rgba(255, 60, 60, 0.5);
+}
+
+.lynx-btn-delete:active {
+  background: rgba(255, 60, 60, 0.35);
+}
+
+.lynx-btn-delete.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ---- Input ---- */
+.lynx-input {
+  height: 28px;
+  padding: 0 8px;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.lynx-input:focus {
+  border-color: #2e8b57;
+}
+
+.lynx-input:invalid {
+  border-color: #ff5555;
+}
+
+/* ---- Slider row ---- */
+.lynx-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lynx-slider-row input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #2a2a2a;
+  border-radius: 2px;
+  outline: none;
+}
+
+.lynx-slider-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2e8b57;
+  cursor: pointer;
+  border: 2px solid #0a0a0a;
+}
+
+.lynx-slider-row input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #2e8b57;
+  cursor: pointer;
+  border: 2px solid #0a0a0a;
+}
+
+.lynx-slider-value {
+  min-width: 52px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  color: #cccccc;
+}
+
+/* ---- Vector input (3-component) ---- */
+.lynx-vec3-row {
+  display: flex;
+  gap: 4px;
+}
+
+.lynx-vec3-row .lynx-input {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  padding: 0 4px;
+}
+
+.lynx-vec3-labels {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 2px;
+}
+
+.lynx-vec3-labels span {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  color: #666666;
+  font-weight: 600;
+}
+
+/* ---- Divider ---- */
+.lynx-divider {
+  height: 1px;
+  background: #2a2a2a;
+  margin: 4px 0;
+}
+
+/* ---- Info badge ---- */
+.lynx-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.lynx-badge-inline {
+  background: rgba(46, 139, 87, 0.15);
+  color: #2e8b57;
+}
+
+.lynx-badge-orthogonal {
+  background: rgba(255, 140, 66, 0.15);
+  color: #ff8c42;
+}
+
+.lynx-badge-tube {
+  background: rgba(46, 139, 87, 0.15);
+  color: #2e8b57;
+}
+
+.lynx-badge-direct {
+  background: rgba(160, 160, 180, 0.15);
+  color: #aaaaaa;
+}
+
+/* ---- Toggle button row (Direct / Tube) ---- */
+.lynx-toggle-row {
+  display: flex;
+  gap: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #2a2a2a;
+}
+
+.lynx-toggle-btn {
+  flex: 1;
+  padding: 5px 0;
+  background: #1a1a1a;
+  color: #888888;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.lynx-toggle-btn:hover {
+  background: #2a2a2a;
+}
+
+.lynx-toggle-btn.active {
+  background: #2e8b57;
+  color: #000000;
+  color: #ffffff;
+}
+
+/* ---- Legend (bottom-center) ---- */
+.lynx-legend {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(6px);
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  font-size: 10px;
+  color: #888888;
+  z-index: 25;
+}
+
+.lynx-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.lynx-legend-spacer {
+  display: none;
+}
+
+/* ---- Generate / Reset buttons (bottom-right) ---- */
+.lynx-generate-wrap {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  z-index: 25;
+}
+
+.lynx-generate-wrap .generate-btn {
+  width: 200px;
+  padding: 10px 0;
+  font-size: 14px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  justify-content: center;
+}
+
+.lynx-generate-wrap .reset-model-btn {
+  background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+  border: 1px solid #3a3a3a;
+  color: #cccccc;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lynx-generate-wrap .reset-model-btn:hover {
+  background: linear-gradient(135deg, #3a3a3a, #2a2a2a);
+  border-color: #444444;
+}
+
+.lynx-generate-wrap .generate-status {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.lynx-legend-swatch {
+  width: 20px;
+  height: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.lynx-legend-swatch.tube {
+  background: #2e8b57;
+  height: 4px;
+}
+
+.lynx-legend-swatch.direct {
+  height: 2px;
+  border-top: 1px dashed #444444;
+  background: none;
+}
+
+.lynx-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lynx-legend-dot.inline {
+  background: #2e8b57;
+}
+
+.lynx-legend-dot.orthogonal {
+  background: #ff8c42;
+}
+
+/* ---- Compact panel content ---- */
+.lynx-prop-panel .lynx-prop-header {
+  padding: 4px 8px 3px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.lynx-prop-panel .lynx-prop-body {
+  padding: 4px 6px;
+  gap: 4px;
+}
+.lynx-prop-panel .lynx-form-group {
+  padding: 1px 0;
+}
+.lynx-prop-panel .lynx-form-group label {
+  font-size: 8px;
+}
+
+/* Small label */
+.lynx-label-sm {
+  font-size: 7px !important;
+  color: #888888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Small toggle row (Inline/Orthogonal, Direct/Tube) */
+.lynx-toggle-sm {
+  height: 18px;
+  border-radius: 3px;
+}
+.lynx-toggle-sm .lynx-toggle-btn {
+  font-size: 8px;
+  padding: 1px 0;
+}
+
+/* Disabled toggle (J1) */
+.lynx-toggle-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Compact slider row: slider + value on one line */
+.lynx-slider-compact {
+  gap: 4px;
+}
+.lynx-slider-compact input[type="range"] {
+  height: 2px;
+  flex: 1;
+}
+.lynx-slider-compact .lynx-slider-value {
+  min-width: 30px;
+  font-size: 9px;
+  text-align: right;
+}
+
+.lynx-prop-panel .lynx-input {
+  height: 18px;
+  font-size: 9px;
+}
+.lynx-prop-panel .lynx-toggle-row {
+  height: 18px;
+}
+.lynx-prop-panel .lynx-toggle-btn {
+  font-size: 8px;
+  padding: 1px 0;
+}
+.lynx-prop-panel .lynx-slider-row {
+  gap: 4px;
+}
+.lynx-prop-panel .lynx-slider-row input[type="range"] {
+  height: 2px;
+}
+.lynx-prop-panel .lynx-slider-value {
+  min-width: 40px;
+  font-size: 9px;
+}
+.lynx-prop-panel .lynx-hint {
+  font-size: 7px;
+}
+
+/* Compact vec3 row */
+.lynx-prop-panel .lynx-vec3-labels {
+  margin-bottom: 1px;
+}
+.lynx-prop-panel .lynx-vec3-labels span {
+  font-size: 8px;
+}
+.lynx-prop-panel .lynx-vec3-row .lynx-input {
+  height: 16px;
+  font-size: 8px;
+  padding: 0 2px;
+}
+
+/* Small delete button */
+.lynx-btn-delete-sm {
+  height: 18px;
+  font-size: 8px;
+  width: 80%;
+  margin: 2px auto 0;
+  padding: 0 8px;
+}
+
+/* ---- Scrollbar ---- */
+.lynx-prop-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lynx-prop-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.lynx-prop-panel::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 3px;
+}
+
+.lynx-prop-panel::-webkit-scrollbar-thumb:hover {
+  background: #2e8b57;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+  .lynx-palette {
+    width: 44px;
+    padding: 3px;
+  }
+
+  .lynx-joint-chip {
+    font-size: 9px;
+  }
+
+  .lynx-prop-panel {
+    width: 200px;
+  }
+
+  .lynx-generate-wrap .generate-btn {
+    padding: 8px 28px;
+    font-size: 12px;
+  }
+}

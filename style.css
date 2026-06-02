@@ -1,0 +1,595 @@
+/* ============================================================
+   MorphBench — Academic Project Page Layout & Theme
+   Dark + Emerald Green (#2e8b57)
+   ============================================================ */
+
+/* ---- Reset & Base ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100%;
+  background: #000000;
+  color: #ffffff;
+  font-family: 'Noto Sans', 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* ---- Page Wrapper ---- */
+.page-wrap {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+/* ---- Loading Overlay ---- */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  transition: opacity 0.35s ease;
+}
+
+.loading-overlay.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #2a2a2a;
+  border-top-color: #2e8b57;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loading-text {
+  font-size: 15px;
+  color: #aaaaaa;
+  letter-spacing: 0.3px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   1. Academic Header
+   ============================================================ */
+.academic-header {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 0 20px;
+  text-align: center;
+}
+
+/* Title — two-line hierarchy inspired by DiT4DiT */
+.project-name {
+  font-size: 4rem;
+  font-weight: 800;
+  color: #2e8b57;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 4px;
+}
+
+.project-subtitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.3;
+  margin-bottom: 12px;
+}
+
+/* Legacy selectors (kept for safety) */
+.project-title {
+  font-size: 40px;
+  font-weight: 800;
+  color: #2e8b57;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 8px;
+}
+
+.title-sep {
+  color: #ffffff;
+}
+
+.title-sub {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.authors {
+  font-size: 1.08rem;
+  color: #cccccc;
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.authors span {
+  white-space: nowrap;
+}
+
+.authors a {
+  color: #2e8b57;
+  text-decoration: none;
+}
+
+.authors a:hover {
+  text-decoration: underline;
+}
+
+.affiliations {
+  font-size: 14px;
+  color: #999999;
+  margin-bottom: 24px;
+}
+
+.links {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  background: #1a1a1a;
+  color: #2e8b57;
+  border: 1px solid #2a2a2a;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.link-btn:hover {
+  background: #222222;
+  border-color: #2e8b57;
+}
+
+.link-btn svg {
+  flex-shrink: 0;
+}
+
+/* Disabled "coming soon" link buttons (no real URL yet) */
+.link-btn-soon {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+  color: #cccccc;
+}
+
+.link-btn-soon .soon-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2e8b57;
+  background: rgba(46, 139, 87, 0.12);
+  border: 1px solid rgba(46, 139, 87, 0.35);
+  border-radius: 10px;
+  padding: 1px 7px;
+  margin-left: 2px;
+}
+
+/* ============================================================
+   2. Abstract
+   ============================================================ */
+.abstract {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 0 40px;
+}
+
+.abstract p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #aaaaaa;
+  border-left: 3px solid #3a3a3a;
+  padding-left: 20px;
+}
+
+/* ============================================================
+   2.5 Hero Banner Video
+   ============================================================ */
+.hero-banner {
+  margin: 0 0 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0a0a0a;
+  line-height: 0; /* remove inline-block gap below video */
+}
+
+.hero-banner video {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ============================================================
+   3. Interactive Demo Section
+   ============================================================ */
+.demo-section {
+  padding: 0 0 48px;
+}
+
+.demo-section h2 {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 20px;
+}
+
+.demo-card {
+  background: #0a0a0a;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ---- Viewer Wrapper (contains 3D viewer + overlay) ---- */
+.viewer-wrapper {
+  position: relative;
+}
+
+.demo-viewer {
+  width: 100%;
+  height: 500px;
+  position: relative;
+  background: #111111;
+}
+
+/* ---- Floating Overlay Panel (top-right of viewer, lil-gui style) ---- */
+.viewer-overlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 220px;
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: rgba(10, 10, 10, 0.90);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 6px;
+  border: 1px solid rgba(60, 60, 60, 0.3);
+  z-index: 10;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+  font-size: 11px;
+}
+
+.viewer-overlay::-webkit-scrollbar {
+  width: 4px;
+}
+
+.viewer-overlay::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.viewer-overlay::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 2px;
+}
+
+.viewer-overlay::-webkit-scrollbar-thumb:hover {
+  background: #2e8b57;
+}
+
+/* ---- Graph Editor (full width below viewer, fixed height) ---- */
+.demo-graph {
+  width: 100%;
+  height: 220px;
+  border-top: 1px solid #2a2a2a;
+  overflow: hidden;
+}
+
+/* ---- Generate Button ---- */
+.generate-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: #2e8b57;
+  color: #000000;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.generate-btn:hover:not(:disabled) {
+  background: #257a4a;
+  box-shadow: 0 2px 12px rgba(46, 139, 87, 0.3);
+}
+
+.generate-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.generate-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.generate-btn.state-loading {
+  background: #1a5c38;
+}
+
+.generate-btn.state-success {
+  background: #2ecc71;
+}
+
+.generate-icon {
+  font-size: 16px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-top-color: #000;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.generate-status {
+  font-size: 12px;
+  color: #666666;
+  transition: color 0.2s;
+}
+
+.generate-status.status-success {
+  color: #2ecc71;
+}
+
+.generate-status.status-error {
+  color: #ff5050;
+}
+
+/* Control panel wrapper (inside overlay) */
+.control-panel-wrap {
+  flex: 1 1 auto;
+  overflow: visible;
+}
+
+/* ============================================================
+   4. Optional Academic Content
+   ============================================================ */
+.content-section {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 0;
+}
+
+.content-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.content-section p {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #aaaaaa;
+  margin-bottom: 16px;
+}
+
+/* ============================================================
+   Status Bar (fixed, subtle)
+   ============================================================ */
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 4px 20px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid #2a2a2a;
+  font-size: 11px;
+  color: #666666;
+  height: 28px;
+  z-index: 400;
+}
+
+.status-bar span {
+  white-space: nowrap;
+}
+
+.log-toggle-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #3a3a3a;
+  color: #666666;
+  padding: 1px 10px;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.log-toggle-btn:hover,
+.log-toggle-btn.active {
+  color: #2e8b57;
+  border-color: #2e8b57;
+}
+
+/* ---- Debug Log Panel ---- */
+.log-panel {
+  position: fixed;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: #0a0a0a;
+  border-top: 1px solid #2a2a2a;
+  z-index: 500;
+  overflow: hidden;
+  transition: height 0.2s ease;
+}
+
+.log-panel.hidden {
+  height: 0;
+  border-top: none;
+}
+
+.log-content {
+  height: 100%;
+  overflow-y: auto;
+  padding: 6px 14px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #ccc;
+}
+
+.log-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.log-line.log-info {
+  color: #666666;
+}
+
+.log-line.log-error {
+  color: #ff5050;
+}
+
+.log-content::-webkit-scrollbar {
+  width: 5px;
+}
+
+.log-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.log-content::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 3px;
+}
+
+.log-content::-webkit-scrollbar-thumb:hover {
+  background: #2e8b57;
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 900px) {
+  .academic-header {
+    padding: 40px 0 24px;
+  }
+
+  .project-name {
+    font-size: 3rem;
+  }
+
+  .project-subtitle {
+    font-size: 1.2rem;
+  }
+
+  .project-title {
+    font-size: 30px;
+  }
+
+  .demo-viewer {
+    height: 350px;
+  }
+
+  .viewer-overlay {
+    width: 190px;
+    max-height: 60%;
+  }
+
+  .demo-graph {
+    height: 187px;
+  }
+}
+
+@media (max-width: 600px) {
+  .page-wrap {
+    padding: 0 12px 80px;
+  }
+
+  .project-name {
+    font-size: 2.4rem;
+  }
+
+  .project-subtitle {
+    font-size: 1rem;
+  }
+
+  .project-title {
+    font-size: 26px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+  }
+
+  .demo-viewer {
+    height: 280px;
+  }
+
+  .viewer-overlay {
+    width: 170px;
+    font-size: 10px;
+  }
+
+  .demo-graph {
+    height: 132px;
+  }
+
+  .links {
+    gap: 8px;
+  }
+
+  .link-btn {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+}
