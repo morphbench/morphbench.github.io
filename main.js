@@ -9,7 +9,7 @@
  */
 
 import { ControlPanel } from './control-panel.js';
-import { generateMJCF, getDefaultPDParams, countSelfCollisions } from './mjcf-generator.js';
+import { generateMJCF, getDefaultPDParams, countSelfCollisions, lowestArmZ, TABLE_TOP_Z } from './mjcf-generator.js';
 
 // ---------------------------------------------------------------------------
 // Debug logger
@@ -179,23 +179,26 @@ async function main() {
     const MAX_TRIES = 40;
     randomModelBtn.addEventListener('click', () => {
       log('Sampling a collision-free random morphology...');
-      let chosen = null, chosenColls = Infinity, used = 0;
+      let chosen = null, chosenScore = Infinity, used = 0;
       for (let t = 1; t <= MAX_TRIES; t++) {
         const cfg = editor.sampleRandomMorphology();
-        let colls;
+        let score;
         try {
-          colls = countSelfCollisions(MJCFParser.parse(generateMJCF(cfg)));
+          const model = MJCFParser.parse(generateMJCF(cfg));
+          const self = countSelfCollisions(model);
+          const belowTable = lowestArmZ(model) < TABLE_TOP_Z ? 1 : 0;
+          score = self + belowTable;
         } catch (err) {
-          colls = Infinity;
+          score = Infinity;
         }
-        if (colls < chosenColls) { chosenColls = colls; chosen = cfg; used = t; }
-        if (colls === 0) break;
+        if (score < chosenScore) { chosenScore = score; chosen = cfg; used = t; }
+        if (score === 0) break;
       }
       if (!chosen) chosen = editor.sampleRandomMorphology();
-      if (chosenColls === 0) {
-        log(`Random morphology: collision-free (sample ${used}/${MAX_TRIES}).`);
+      if (chosenScore === 0) {
+        log(`Random morphology: collision-free & above table (sample ${used}/${MAX_TRIES}).`);
       } else {
-        log(`Random morphology: no collision-free sample in ${MAX_TRIES} tries; using best (${chosenColls} colliding link-pair${chosenColls === 1 ? '' : 's'}).`, 'error');
+        log(`Random morphology: no fully-clean sample in ${MAX_TRIES} tries; using best (${chosenScore} violation${chosenScore === 1 ? '' : 's'}).`, 'error');
       }
       editor.setMorphology(chosen);
       generateModel();

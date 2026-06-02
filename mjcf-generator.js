@@ -618,6 +618,49 @@ function _segSegDist(p1, q1, p2, q2) {
   return Math.sqrt(dot(dd, dd));
 }
 
+function _quatFromAxisAngle(axis, angle) {
+  let x = axis[0], y = axis[1], z = axis[2];
+  const n = Math.hypot(x, y, z) || 1;
+  x /= n; y /= n; z /= n;
+  const s = Math.sin(angle / 2);
+  return [Math.cos(angle / 2), x*s, y*s, z*s];
+}
+
+// Forward kinematics: returns world(name) -> {p:[x,y,z], q:[w,x,y,z]}.
+// jointAngles (optional, aligned with model.joints) applies each hinge's rotation
+// — joints sit at their body origin in this model, so the same routine yields the
+// rest pose (no angles) or any commanded pose (for in-motion collision checks).
+function _buildWorldFn(model, jointAngles) {
+  const bodies = model && model.bodies ? model.bodies : [];
+  const joints = model && model.joints ? model.joints : [];
+  const byName = {};
+  for (const b of bodies) byName[b.name] = b;
+  const jointByBody = {};
+  if (jointAngles) {
+    for (let i = 0; i < joints.length; i++) {
+      const a = jointAngles[i];
+      if (a) jointByBody[joints[i].body] = { axis: joints[i].axis || [0,0,1], angle: a };
+    }
+  }
+  const cache = {};
+  function world(name) {
+    if (name == null || name === '__worldbody__') return { p: [0,0,0], q: [1,0,0,0] };
+    if (cache[name]) return cache[name];
+    const b = byName[name];
+    if (!b) return { p: [0,0,0], q: [1,0,0,0] };
+    const par = world(b.parent);
+    const lq = b.quat ? b.quat : (b.euler ? _eulerToQuat(b.euler) : [1,0,0,0]);
+    const lp = b.pos || [0,0,0];
+    const rp = _qrot(par.q, lp);
+    let q = _qmul(par.q, lq);
+    const jb = jointByBody[name];
+    if (jb) q = _qmul(q, _quatFromAxisAngle(jb.axis, jb.angle));
+    cache[name] = { p: [par.p[0]+rp[0], par.p[1]+rp[1], par.p[2]+rp[2]], q };
+    return cache[name];
+  }
+  return world;
+}
+
 /**
  * Count colliding tube-link pairs in the rest pose.
  * @param {object} model  parsed MJCF ({ bodies, geoms })
@@ -629,24 +672,8 @@ export function countSelfCollisions(model, opts = {}) {
   const minSep = opts.minLinkSep != null ? opts.minLinkSep : 2; // skip tube pairs closer than this gap
   const maxSeg = opts.maxSegPerTube != null ? opts.maxSegPerTube : 16;
 
-  const bodies = model && model.bodies ? model.bodies : [];
   const geoms = model && model.geoms ? model.geoms : [];
-  const byName = {};
-  for (const b of bodies) byName[b.name] = b;
-
-  const cache = {};
-  function world(name) {
-    if (name == null || name === '__worldbody__') return { p: [0,0,0], q: [1,0,0,0] };
-    if (cache[name]) return cache[name];
-    const b = byName[name];
-    if (!b) return { p: [0,0,0], q: [1,0,0,0] };
-    const par = world(b.parent);
-    const lq = b.quat ? b.quat : (b.euler ? _eulerToQuat(b.euler) : [1,0,0,0]);
-    const lp = b.pos || [0,0,0];
-    const rp = _qrot(par.q, lp);
-    cache[name] = { p: [par.p[0]+rp[0], par.p[1]+rp[1], par.p[2]+rp[2]], q: _qmul(par.q, lq) };
-    return cache[name];
-  }
+  const world = _buildWorldFn(model, opts.jointAngles);
 
   // World-space capsule segments grouped by tube index.
   const tubes = {};
@@ -691,4 +718,36 @@ export function countSelfCollisions(model, opts = {}) {
     }
   }
   return collisions;
+}
+
+// Table top surface z: table_top is a box, half-z 0.009 atop center z=0.609.
+export const TABLE_TOP_Z = 0.618;
+
+/**
+ * Lowest surface z the arm's tube links + end-effector reach at the rest pose.
+ * Cheap "just the z height" table-collision proxy: the arm intersects the table
+ * top iff lowestArmZ(model) < TABLE_TOP_Z. The table x/y footprint and the
+ * short joint housings near the mount are intentionally ignored (conservative).
+ */
+export function lowestArmZ(model, opts = {}) {
+  const tubeR = opts.tubeR != null ? opts.tubeR : 0.0396;
+  const world = _buildWorldFn(model, opts.jointAngles);
+  const geoms = model && model.geoms ? model.geoms : [];
+  let minZ = Infinity;
+  for (const g of geoms) {
+    if (g.type !== 'capsule' || !g.fromto || !/^tube_\d+$/.test(g.body || '')) continue;
+    const wt = world(g.body);
+    const az = wt.p[2] + _qrot(wt.q, [g.fromto[0], g.fromto[1], g.fromto[2]])[2];
+    const bz = wt.p[2] + _qrot(wt.q, [g.fromto[3], g.fromto[4], g.fromto[5]])[2];
+    const r = (g.size && g.size[0]) || tubeR;
+    minZ = Math.min(minZ, az - r, bz - r);
+  }
+  // End-effector tip (local +z 0.07) and origin, minus its small geom radius.
+  const ee = (model && model.bodies ? model.bodies : []).find(b => b.name === 'end_effector');
+  if (ee) {
+    const w = world('end_effector');
+    const tipZ = w.p[2] + _qrot(w.q, [0, 0, 0.07])[2];
+    minZ = Math.min(minZ, w.p[2] - 0.01, tipZ - 0.01);
+  }
+  return minZ;
 }

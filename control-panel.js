@@ -2,6 +2,8 @@
    Lynx Control Panel  --  Joint target/actual position UI
    ============================================================ */
 
+import { countSelfCollisions, lowestArmZ, TABLE_TOP_Z } from './mjcf-generator.js';
+
 export class ControlPanel {
   /**
    * @param {HTMLElement} containerElement
@@ -304,18 +306,56 @@ export class ControlPanel {
     if (count === 0) return;
 
     const ranges = this._viewer.getJointRanges();
-    const targets = new Float64Array(count);
+    const model = this._viewer.model;                  // parsed MJCF (for collision FK)
+    const start = this._viewer.getCurrentPositions();  // current (collision-free) pose
+    const MAX_TRIES = 20;
+    const PATH_SAMPLES = 5;                            // checks along the swept motion
+
+    const sampleTargets = () => {
+      const t = new Float64Array(count);
+      for (let i = 0; i < count; i++) {
+        const [rMin, rMax] = ranges[i] || [-3.14, 3.14];
+        t[i] = rMin + Math.random() * (rMax - rMin);
+      }
+      return t;
+    };
+
+    // Collisions swept from the current pose to `targets` (self + table floor),
+    // sampled at a few way-points so the *whole motion* stays clean — not just
+    // the endpoint. Pure FK + capsule maths, run only on click (never per frame).
+    const pathViolations = (targets) => {
+      if (!model) return 0;
+      let v = 0;
+      for (let s = 1; s <= PATH_SAMPLES; s++) {
+        const a = s / PATH_SAMPLES;
+        const pose = new Array(count);
+        for (let i = 0; i < count; i++) {
+          const s0 = (start && start[i] != null) ? start[i] : 0;
+          pose[i] = s0 + (targets[i] - s0) * a;
+        }
+        try {
+          v += countSelfCollisions(model, { jointAngles: pose });
+          if (lowestArmZ(model, { jointAngles: pose }) < TABLE_TOP_Z) v += 1;
+        } catch (e) { /* never block motion on a check failure */ }
+      }
+      return v;
+    };
+
+    let targets = null, best = Infinity;
+    for (let t = 0; t < MAX_TRIES; t++) {
+      const cand = sampleTargets();
+      const v = pathViolations(cand);
+      if (v < best) { best = v; targets = cand; }
+      if (v === 0) break;
+    }
+    if (!targets) targets = sampleTargets();
 
     for (let i = 0; i < count; i++) {
-      const [rMin, rMax] = ranges[i] || [-3.14, 3.14];
-      targets[i] = rMin + Math.random() * (rMax - rMin);
-      // Update slider UI
       if (this._rows[i]) {
         this._rows[i].slider.value = targets[i];
         this._rows[i].targetVal.textContent = targets[i].toFixed(2) + ' rad';
       }
     }
-
     this._viewer.setAllTargetPositions(targets);
   }
 
