@@ -43,6 +43,10 @@ const TUBE_DEFAULT_POS = [0.0, 0.0, 0.2];
 const TUBE_DEFAULT_THETA = 0.0;
 const TUBE_DEFAULT_DUAL_DIST = 0.05;
 const MAX_JOINTS = 10;
+// "Random Model" samples num_joints uniformly in [RANDOM_JOINTS_MIN, RANDOM_JOINTS_MAX].
+// Set RANDOM_JOINTS_MAX = 6 to restrict sampling to the 4J/5J/6J benchmark taxonomy.
+const RANDOM_JOINTS_MIN = 2;
+const RANDOM_JOINTS_MAX = MAX_JOINTS;
 const SPACING = 80;
 const FIXED_GAP = 30;
 const ANIM_DURATION = 300;
@@ -98,6 +102,50 @@ class GraphEditor {
 
   resetMorphology() {
     this.setMorphology(JSON.parse(JSON.stringify(DEFAULT_MORPHOLOGY)));
+  }
+
+  /**
+   * Build a morphology by uniformly sampling EVERY dimension the editor can
+   * change, then load it. Sampled space:
+   *   - num_joints                     [RANDOM_JOINTS_MIN .. RANDOM_JOINTS_MAX]
+   *   - each joint axis type (J1 fixed) inline | orthogonal
+   *   - each joint rotation angle       -180..180 deg (slider step 1)
+   *   - each link type                  direct | tube
+   *   - each TUBE link geometry         end pos (x,y,z), theta, dual-point dist
+   * Tube geometry is only editable when the link is a tube, so we sample it
+   * only for tube links — matching the property panel exactly.
+   */
+  randomMorphology() {
+    const ri = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1)); // int [lo,hi]
+    const rf = (lo, hi) => lo + Math.random() * (hi - lo);                  // float [lo,hi)
+    const snap = (v, step) => Math.round(v / step) * step;
+
+    const n = ri(RANDOM_JOINTS_MIN, RANDOM_JOINTS_MAX);
+
+    const joint_types = ["inline"]; // J1 is always inline
+    for (let i = 1; i < n; i++) joint_types.push(Math.random() < 0.5 ? "inline" : "orthogonal");
+
+    const rotation_angles = [];
+    for (let i = 0; i < n; i++) rotation_angles.push(ri(-180, 180));
+
+    const genotype_tube = [];
+    for (let i = 0; i < n - 1; i++) genotype_tube.push(Math.random() < 0.5 ? 1 : 0);
+
+    const cfg = { num_joints: n, joint_types, rotation_angles, genotype_tube };
+
+    for (let i = 0; i < n - 1; i++) {
+      if (genotype_tube[i] !== 1) continue; // direct link → no editable geometry
+      const t = i + 1;
+      cfg[`l${t}_end_point_pos`] = [
+        snap(rf(-0.2, 0.2), 0.01),  // X (UI unbounded; bound like Y for sanity)
+        snap(rf(-0.2, 0.2), 0.01),  // Y  [-0.2, 0.2]
+        snap(rf(0.1, 0.36), 0.01),  // Z  [0.1, 0.36]
+      ];
+      cfg[`l${t}_end_point_theta`] = ri(-180, 180);                  // [-180, 180]
+      cfg[`l${t}_dual_point_distance`] = snap(rf(0.01, 0.2), 0.005); // [0.01, 0.2]
+    }
+
+    this.setMorphology(cfg);
   }
 
   setMorphology(cfg) {
@@ -197,7 +245,10 @@ class GraphEditor {
     this._generateWrap.innerHTML = `
       <span id="generate-status" class="generate-status"></span>
       <button id="generate-btn" class="generate-btn"><span class="generate-icon"></span><span class="generate-label">Generate Model</span></button>
-      <button id="reset-model-btn" class="generate-btn reset-model-btn"><span class="reset-label">Reset Model</span></button>
+      <div class="model-btn-row">
+        <button id="reset-model-btn" class="generate-btn reset-model-btn"><span class="reset-label">Reset Model</span></button>
+        <button id="random-model-btn" class="generate-btn random-model-btn"><span class="random-label">Random Model</span></button>
+      </div>
     `;
     this._container.appendChild(this._generateWrap);
 

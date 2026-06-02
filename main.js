@@ -172,6 +172,16 @@ async function main() {
     });
   }
 
+  // 5c. Random model handler — sample a morphology from the full editable space
+  const randomModelBtn = document.getElementById('random-model-btn');
+  if (randomModelBtn) {
+    randomModelBtn.addEventListener('click', () => {
+      log('Sampling a random morphology...');
+      editor.randomMorphology();
+      generateModel();
+    });
+  }
+
   // 5. Hide loading overlay
   window.__morphbenchReady = true;
   const overlay = document.getElementById('loading-overlay');

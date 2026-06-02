@@ -604,6 +604,34 @@
   border-color: #444444;
 }
 
+/* Reset + Random share the original single-button width (200px), split evenly */
+.lynx-generate-wrap .model-btn-row {
+  display: flex;
+  gap: 6px;
+  width: 200px;
+}
+
+.lynx-generate-wrap .model-btn-row .generate-btn {
+  width: auto;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 0;
+  font-size: 12px;
+}
+
+.lynx-generate-wrap .random-model-btn {
+  background: linear-gradient(135deg, #2e8b57, #1e6b3e);
+  border: 1px solid #2e8b57;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.lynx-generate-wrap .random-model-btn:hover {
+  background: linear-gradient(135deg, #36a468, #2e8b57);
+  border-color: #36a468;
+}
+
 .lynx-generate-wrap .generate-status {
   font-size: 11px;
   white-space: nowrap;
