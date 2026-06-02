@@ -662,15 +662,18 @@ function _buildWorldFn(model, jointAngles) {
 }
 
 /**
- * Count colliding tube-link pairs in the rest pose.
- * @param {object} model  parsed MJCF ({ bodies, geoms })
- * @param {object} [opts] { margin=1.0, minLinkSep=2, maxSegPerTube=16 }
+ * Count colliding tube-link pairs (every two tubes, including consecutive ones).
+ * Consecutive tubes share exactly one joint and legitimately meet there, so we
+ * ignore overlaps within `junctionR` of that shared joint; everything else —
+ * including a tube bending back into its neighbour — is flagged.
+ * @param {object} model  parsed MJCF ({ bodies, geoms, joints })
+ * @param {object} [opts] { margin=1.0, maxSegPerTube=16, junctionR=0.08, jointAngles }
  * @returns {number} number of distinct tube pairs whose capsules overlap
  */
 export function countSelfCollisions(model, opts = {}) {
   const margin = opts.margin != null ? opts.margin : 1.0;      // collide if dist < (r1+r2)*margin
-  const minSep = opts.minLinkSep != null ? opts.minLinkSep : 2; // skip tube pairs closer than this gap
   const maxSeg = opts.maxSegPerTube != null ? opts.maxSegPerTube : 16;
+  const junctionR = opts.junctionR != null ? opts.junctionR : 0.08; // shared-joint exclusion radius
 
   const geoms = model && model.geoms ? model.geoms : [];
   const world = _buildWorldFn(model, opts.jointAngles);
@@ -706,11 +709,21 @@ export function countSelfCollisions(model, opts = {}) {
   let collisions = 0;
   for (let i = 0; i < idxs.length; i++) {
     for (let j = i + 1; j < idxs.length; j++) {
-      if (Math.abs(idxs[i] - idxs[j]) < minSep) continue;
+      // Consecutive tube slots share one joint (body "j{slot}") and meet there
+      // legitimately — exclude overlaps near it. Non-consecutive tubes share
+      // nothing and are checked in full.
+      let excl = null;
+      if (idxs[j] - idxs[i] === 1) excl = world('j' + idxs[j]).p;
       const A = tubes[idxs[i]], B = tubes[idxs[j]];
       let hit = false;
       for (let x = 0; x < A.length && !hit; x++) {
         for (let y = 0; y < B.length; y++) {
+          if (excl) {
+            const amx = (A[x].a[0]+A[x].b[0])/2, amy = (A[x].a[1]+A[x].b[1])/2, amz = (A[x].a[2]+A[x].b[2])/2;
+            const bmx = (B[y].a[0]+B[y].b[0])/2, bmy = (B[y].a[1]+B[y].b[1])/2, bmz = (B[y].a[2]+B[y].b[2])/2;
+            if (Math.hypot(amx-excl[0], amy-excl[1], amz-excl[2]) < junctionR ||
+                Math.hypot(bmx-excl[0], bmy-excl[1], bmz-excl[2]) < junctionR) continue;
+          }
           if (_segSegDist(A[x].a, A[x].b, B[y].a, B[y].b) < (A[x].r + B[y].r) * margin) { hit = true; break; }
         }
       }
