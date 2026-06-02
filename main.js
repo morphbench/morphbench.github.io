@@ -9,7 +9,7 @@
  */
 
 import { ControlPanel } from './control-panel.js';
-import { generateMJCF, getDefaultPDParams } from './mjcf-generator.js';
+import { generateMJCF, getDefaultPDParams, countSelfCollisions } from './mjcf-generator.js';
 
 // ---------------------------------------------------------------------------
 // Debug logger
@@ -172,12 +172,32 @@ async function main() {
     });
   }
 
-  // 5c. Random model handler — sample a morphology from the full editable space
+  // 5c. Random model handler — sample from the full editable space, then reject
+  //     rest-pose self-collisions by resampling (keep the best of MAX_TRIES).
   const randomModelBtn = document.getElementById('random-model-btn');
   if (randomModelBtn) {
+    const MAX_TRIES = 40;
     randomModelBtn.addEventListener('click', () => {
-      log('Sampling a random morphology...');
-      editor.randomMorphology();
+      log('Sampling a collision-free random morphology...');
+      let chosen = null, chosenColls = Infinity, used = 0;
+      for (let t = 1; t <= MAX_TRIES; t++) {
+        const cfg = editor.sampleRandomMorphology();
+        let colls;
+        try {
+          colls = countSelfCollisions(MJCFParser.parse(generateMJCF(cfg)));
+        } catch (err) {
+          colls = Infinity;
+        }
+        if (colls < chosenColls) { chosenColls = colls; chosen = cfg; used = t; }
+        if (colls === 0) break;
+      }
+      if (!chosen) chosen = editor.sampleRandomMorphology();
+      if (chosenColls === 0) {
+        log(`Random morphology: collision-free (sample ${used}/${MAX_TRIES}).`);
+      } else {
+        log(`Random morphology: no collision-free sample in ${MAX_TRIES} tries; using best (${chosenColls} colliding link-pair${chosenColls === 1 ? '' : 's'}).`, 'error');
+      }
+      editor.setMorphology(chosen);
       generateModel();
     });
   }

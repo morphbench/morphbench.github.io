@@ -105,8 +105,9 @@ class GraphEditor {
   }
 
   /**
-   * Build a morphology by uniformly sampling EVERY dimension the editor can
-   * change, then load it. Sampled space:
+   * Sample a morphology by uniformly drawing EVERY dimension the editor can
+   * change and RETURN it (no side effects — caller decides whether to load it,
+   * e.g. after a collision check). Sampled space:
    *   - num_joints                     [RANDOM_JOINTS_MIN .. RANDOM_JOINTS_MAX]
    *   - each joint axis type (J1 fixed) inline | orthogonal
    *   - each joint rotation angle       -180..180 deg (slider step 1)
@@ -115,7 +116,7 @@ class GraphEditor {
    * Tube geometry is only editable when the link is a tube, so we sample it
    * only for tube links — matching the property panel exactly.
    */
-  randomMorphology() {
+  sampleRandomMorphology() {
     const ri = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1)); // int [lo,hi]
     const rf = (lo, hi) => lo + Math.random() * (hi - lo);                  // float [lo,hi)
     const snap = (v, step) => Math.round(v / step) * step;
@@ -145,7 +146,12 @@ class GraphEditor {
       cfg[`l${t}_dual_point_distance`] = snap(rf(0.01, 0.2), 0.005); // [0.01, 0.2]
     }
 
-    this.setMorphology(cfg);
+    return cfg;
+  }
+
+  /** Sample a random morphology and load it immediately (no collision check). */
+  randomMorphology() {
+    this.setMorphology(this.sampleRandomMorphology());
   }
 
   setMorphology(cfg) {

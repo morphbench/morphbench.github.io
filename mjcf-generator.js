@@ -550,3 +550,145 @@ export function getDefaultPDParams(cfg) {
   }
   return { kp, kd, effort_limit: effortLimit, max_velocity: 2.0, max_acceleration: 10.0 };
 }
+
+// ---------------------------------------------------------------------------
+// Rest-pose self-collision detection
+//
+// Works on a model already parsed by viewer.js's MJCFParser
+// ({ bodies:[{name,parent,pos,quat,euler}], geoms:[{type,body,fromto,size}] }).
+// We forward-kinematic the body tree at the rest pose (all joints = 0, so each
+// body contributes only its fixed pos/quat), world-transform every tube capsule
+// segment, and test capsule overlap between tube links that are >= MIN_LINK_SEP
+// indices apart (adjacent tubes naturally touch at their shared joint, so they
+// are skipped). Quaternions are MuJoCo wxyz. This covers link-vs-link
+// self-collision (the dominant failure for a serial arm); joint housings, base,
+// and table are intentionally NOT checked in this first version.
+// ---------------------------------------------------------------------------
+function _qmul(a, b) {
+  const aw = a[0], ax = a[1], ay = a[2], az = a[3];
+  const bw = b[0], bx = b[1], by = b[2], bz = b[3];
+  return [
+    aw*bw - ax*bx - ay*by - az*bz,
+    aw*bx + ax*bw + ay*bz - az*by,
+    aw*by - ax*bz + ay*bw + az*bx,
+    aw*bz + ax*by - ay*bx + az*bw,
+  ];
+}
+function _qrot(q, v) {
+  const w = q[0], x = q[1], y = q[2], z = q[3];
+  const tx = 2*(y*v[2] - z*v[1]);
+  const ty = 2*(z*v[0] - x*v[2]);
+  const tz = 2*(x*v[1] - y*v[0]);
+  return [
+    v[0] + w*tx + (y*tz - z*ty),
+    v[1] + w*ty + (z*tx - x*tz),
+    v[2] + w*tz + (x*ty - y*tx),
+  ];
+}
+function _eulerToQuat(e) { // xyz intrinsic, radians (fallback; generator uses quat)
+  let q = [Math.cos(e[0]/2), Math.sin(e[0]/2), 0, 0];
+  q = _qmul(q, [Math.cos(e[1]/2), 0, Math.sin(e[1]/2), 0]);
+  q = _qmul(q, [Math.cos(e[2]/2), 0, 0, Math.sin(e[2]/2)]);
+  return q;
+}
+// Minimum distance between segments p1-q1 and p2-q2 (Ericson, Real-Time CD).
+function _segSegDist(p1, q1, p2, q2) {
+  const sub = (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+  const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+  const d1 = sub(q1, p1), d2 = sub(q2, p2), r = sub(p1, p2);
+  const a = dot(d1, d1), e = dot(d2, d2), f = dot(d2, r);
+  const EPS = 1e-12;
+  let s, t;
+  if (a <= EPS && e <= EPS) return Math.sqrt(dot(r, r));
+  if (a <= EPS) { s = 0; t = Math.max(0, Math.min(1, f/e)); }
+  else {
+    const c = dot(d1, r);
+    if (e <= EPS) { t = 0; s = Math.max(0, Math.min(1, -c/a)); }
+    else {
+      const b = dot(d1, d2), denom = a*e - b*b;
+      s = denom > EPS ? Math.max(0, Math.min(1, (b*f - c*e)/denom)) : 0;
+      t = (b*s + f)/e;
+      if (t < 0) { t = 0; s = Math.max(0, Math.min(1, -c/a)); }
+      else if (t > 1) { t = 1; s = Math.max(0, Math.min(1, (b - c)/a)); }
+    }
+  }
+  const c1 = [p1[0]+d1[0]*s, p1[1]+d1[1]*s, p1[2]+d1[2]*s];
+  const c2 = [p2[0]+d2[0]*t, p2[1]+d2[1]*t, p2[2]+d2[2]*t];
+  const dd = sub(c1, c2);
+  return Math.sqrt(dot(dd, dd));
+}
+
+/**
+ * Count colliding tube-link pairs in the rest pose.
+ * @param {object} model  parsed MJCF ({ bodies, geoms })
+ * @param {object} [opts] { margin=1.0, minLinkSep=2, maxSegPerTube=16 }
+ * @returns {number} number of distinct tube pairs whose capsules overlap
+ */
+export function countSelfCollisions(model, opts = {}) {
+  const margin = opts.margin != null ? opts.margin : 1.0;      // collide if dist < (r1+r2)*margin
+  const minSep = opts.minLinkSep != null ? opts.minLinkSep : 2; // skip tube pairs closer than this gap
+  const maxSeg = opts.maxSegPerTube != null ? opts.maxSegPerTube : 16;
+
+  const bodies = model && model.bodies ? model.bodies : [];
+  const geoms = model && model.geoms ? model.geoms : [];
+  const byName = {};
+  for (const b of bodies) byName[b.name] = b;
+
+  const cache = {};
+  function world(name) {
+    if (name == null || name === '__worldbody__') return { p: [0,0,0], q: [1,0,0,0] };
+    if (cache[name]) return cache[name];
+    const b = byName[name];
+    if (!b) return { p: [0,0,0], q: [1,0,0,0] };
+    const par = world(b.parent);
+    const lq = b.quat ? b.quat : (b.euler ? _eulerToQuat(b.euler) : [1,0,0,0]);
+    const lp = b.pos || [0,0,0];
+    const rp = _qrot(par.q, lp);
+    cache[name] = { p: [par.p[0]+rp[0], par.p[1]+rp[1], par.p[2]+rp[2]], q: _qmul(par.q, lq) };
+    return cache[name];
+  }
+
+  // World-space capsule segments grouped by tube index.
+  const tubes = {};
+  for (const g of geoms) {
+    if (g.type !== 'capsule' || !g.fromto) continue;
+    const m = /^tube_(\d+)$/.exec(g.body || '');
+    if (!m) continue;
+    const idx = parseInt(m[1], 10);
+    const wt = world(g.body);
+    const ra = _qrot(wt.q, [g.fromto[0], g.fromto[1], g.fromto[2]]);
+    const rb = _qrot(wt.q, [g.fromto[3], g.fromto[4], g.fromto[5]]);
+    const seg = {
+      a: [wt.p[0]+ra[0], wt.p[1]+ra[1], wt.p[2]+ra[2]],
+      b: [wt.p[0]+rb[0], wt.p[1]+rb[1], wt.p[2]+rb[2]],
+      r: (g.size && g.size[0]) || 0.0396,
+    };
+    (tubes[idx] = tubes[idx] || []).push(seg);
+  }
+
+  // Stride-subsample long tubes for speed (smooth curves → coarse is enough).
+  const idxs = Object.keys(tubes).map(Number).sort((x, y) => x - y);
+  for (const i of idxs) {
+    const segs = tubes[i];
+    if (segs.length > maxSeg) {
+      const stride = Math.ceil(segs.length / maxSeg);
+      tubes[i] = segs.filter((_, k) => k % stride === 0 || k === segs.length - 1);
+    }
+  }
+
+  let collisions = 0;
+  for (let i = 0; i < idxs.length; i++) {
+    for (let j = i + 1; j < idxs.length; j++) {
+      if (Math.abs(idxs[i] - idxs[j]) < minSep) continue;
+      const A = tubes[idxs[i]], B = tubes[idxs[j]];
+      let hit = false;
+      for (let x = 0; x < A.length && !hit; x++) {
+        for (let y = 0; y < B.length; y++) {
+          if (_segSegDist(A[x].a, A[x].b, B[y].a, B[y].b) < (A[x].r + B[y].r) * margin) { hit = true; break; }
+        }
+      }
+      if (hit) collisions++;
+    }
+  }
+  return collisions;
+}
