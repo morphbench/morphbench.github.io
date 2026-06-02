@@ -731,9 +731,13 @@ export const TABLE_TOP_Z = 0.618;
  */
 export function lowestArmZ(model, opts = {}) {
   const tubeR = opts.tubeR != null ? opts.tubeR : 0.0396;
+  const includeJoints = opts.includeJoints !== false;
+  const jointClear = opts.jointClearance != null ? opts.jointClearance : 0.005;
   const world = _buildWorldFn(model, opts.jointAngles);
+  const bodies = model && model.bodies ? model.bodies : [];
   const geoms = model && model.geoms ? model.geoms : [];
   let minZ = Infinity;
+  // Tube link capsules: lowest endpoint minus the tube radius.
   for (const g of geoms) {
     if (g.type !== 'capsule' || !g.fromto || !/^tube_\d+$/.test(g.body || '')) continue;
     const wt = world(g.body);
@@ -742,8 +746,18 @@ export function lowestArmZ(model, opts = {}) {
     const r = (g.size && g.size[0]) || tubeR;
     minZ = Math.min(minZ, az - r, bz - r);
   }
+  // Joint housings — including the distal ones that swing below the table when
+  // joints are numerous and the links between them are "direct" (no tube to
+  // sample). Body-origin centerline minus a small clearance. The first joint
+  // sits ~1 cm above the table and never moves, so jointClear (0.005) keeps it
+  // from false-positiving while still catching joints that dip under.
+  if (includeJoints) {
+    for (const b of bodies) {
+      if (/^j\d+(_fixed)?$/.test(b.name)) minZ = Math.min(minZ, world(b.name).p[2] - jointClear);
+    }
+  }
   // End-effector tip (local +z 0.07) and origin, minus its small geom radius.
-  const ee = (model && model.bodies ? model.bodies : []).find(b => b.name === 'end_effector');
+  const ee = bodies.find(b => b.name === 'end_effector');
   if (ee) {
     const w = world('end_effector');
     const tipZ = w.p[2] + _qrot(w.q, [0, 0, 0.07])[2];
